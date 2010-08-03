@@ -5,6 +5,7 @@ import edu.stanford.junction.sample.jxwhiteboard.intents.WhiteboardIntents;
 import edu.stanford.junction.android.AndroidJunctionMaker;
 import edu.stanford.junction.Junction;
 import edu.stanford.junction.JunctionException;
+import edu.stanford.junction.api.activity.ActivityScript;
 import edu.stanford.junction.api.activity.JunctionActor;
 import edu.stanford.junction.api.activity.JunctionExtra;
 import edu.stanford.junction.api.messaging.MessageHeader;
@@ -67,6 +68,7 @@ public class JXWhiteboardActivity extends Activity{
     private static final int ERASE_COLOR = 0xFFFFFF;
     private static final int ERASE_WIDTH = 30;
 
+    private ActivityScript mScript;
     private ArrayAdapter<String> data;
     private JunctionActor mActor;
 	private int currentColor = 0x000000;
@@ -93,6 +95,20 @@ public class JXWhiteboardActivity extends Activity{
 		super.onCreate(savedInstanceState);
 		panel = new DrawingPanel(this);
 		setContentView(panel);
+		
+		mScript = new ActivityScript();
+		mScript.setActivityID("org.openjunction.whiteboard");
+		mScript.setFriendlyName("Whiteboard");
+		
+		JSONObject androidSpec = new JSONObject();
+		try {
+			androidSpec.put("url", "http://prpl.stanford.edu/android/whiteboard.apk");
+			androidSpec.put("package", this.getPackageName());
+		} catch (JSONException e) {
+			throw new AssertionError("Error building ActivityScript json");
+		}
+		mScript.addRolePlatform("participant", "android", androidSpec);
+		
 		Uri sessionUri;
 		if (AndroidJunctionMaker.isJoinable(this)) {
 			sessionUri = Uri.parse(getIntent().getStringExtra("invitationURI"));
@@ -515,7 +531,7 @@ public class JXWhiteboardActivity extends Activity{
 		final XMPPSwitchboardConfig sb = new XMPPSwitchboardConfig(uri.getAuthority());
 		sb.setConnectionTimeout(10000);
 		try{
-			AndroidJunctionMaker.getInstance(sb).newJunction(url, mActor);
+			AndroidJunctionMaker.getInstance(sb).newJunction(url, mScript, mActor);
 		}
 		catch(JunctionException e){
 			maybeRetryJunction(uri, e);
